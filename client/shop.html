@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Management — StockSmart Hub</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #5b5af7; --primary-hover: #4a49e0; --secondary: #0ea5e9;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --bg-base: #0a0a1a; --bg-elevated: #12122a; --bg-card: rgba(18, 18, 42, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.06); --border-medium: rgba(255, 255, 255, 0.1);
+            --text-primary: #f1f1f6; --text-secondary: #8b8ba6; --text-muted: #6b6b80;
+            --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-base); color: var(--text-primary);
+            min-height: 100vh; -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(circle at 25% 35%, rgba(91,90,247,0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 75% 65%, rgba(14,165,233,0.05) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+        .top-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(18,18,42,0.9); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px; display: flex; align-items: center; gap: 16px;
+        }
+        .back-btn {
+            background: none; border: 1px solid var(--border-medium); color: var(--text-secondary);
+            padding: 8px 14px; border-radius: var(--radius-sm); cursor: pointer;
+            font-size: 13px; font-family: inherit; transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .shop-title { font-size: 20px; font-weight: 700; flex: 1; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 28px; position: relative; z-index: 1; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+        .stat-mini {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 20px;
+        }
+        .stat-mini-value { font-size: 26px; font-weight: 800; }
+        .stat-mini-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .text-purple { color: #a78bfa; } .text-blue { color: var(--secondary); }
+        .text-green { color: var(--success); } .text-orange { color: var(--warning); }
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+            border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer;
+            border: none; font-family: inherit; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-primary { background: linear-gradient(135deg,var(--primary),#7c3aed); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-medium); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+        .btn-success { background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+        .btn-sm { padding: 5px 12px; font-size: 11px; }
+        .action-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+        .search-box {
+            display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-medium);
+            border-radius: var(--radius-sm); flex: 1; max-width: 300px;
+        }
+        .search-box input { background: none; border: none; color: var(--text-primary); font-size: 13px; font-family: inherit; width: 100%; }
+        .search-box input:focus { outline: none; }
+        .table-card {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 18px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+        td { padding: 14px 18px; font-size: 13px; border-bottom: 1px solid var(--border-subtle); }
+        tr:hover td { background: rgba(255,255,255,0.015); }
+        .low-stock-row { background: rgba(239,68,68,0.03); }
+        .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+        .dot-ok { background: var(--success); }
+        .dot-low { background: var(--danger); }
+        .qty-control { display: inline-flex; align-items: center; gap: 6px; }
+        .qty-btn {
+            width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-medium);
+            background: rgba(255,255,255,0.03); color: var(--text-primary); cursor: pointer;
+            font-size: 14px; display: flex; align-items: center; justify-content: center;
+            font-family: inherit; transition: all 0.2s;
+        }
+        .qty-btn:hover { background: rgba(255,255,255,0.08); }
+        .qty-value { font-weight: 600; min-width: 24px; text-align: center; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal { background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); padding: 32px; width: 480px; max-width: 90vw; max-height: 85vh; overflow-y: auto; animation: modalIn 0.25s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 18px; font-weight: 700; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+        .form-input, .form-textarea { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 13px; font-family: inherit; }
+        .form-input:focus { outline: none; border-color: var(--primary); }
+        .toast { position: fixed; bottom: 28px; right: 28px; background: var(--bg-elevated); border: 1px solid var(--border-medium); padding: 14px 22px; border-radius: var(--radius-sm); z-index: 2000; font-size: 13px; animation: toastIn 0.3s ease; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .container { padding: 16px; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <button class="back-btn" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+        <h1 class="shop-title" id="shopTitle">Loading...</h1>
+        <button class="btn btn-danger btn-sm" onclick="deleteCurrentShop()">🗑 Delete Shop</button>
+    </nav>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-mini"><div class="stat-mini-value text-purple" id="statTotalItems">0</div><div class="stat-mini-label">Total Items</div></div>
+            <div class="stat-mini"><div class="stat-mini-value text-orange" id="statLowStock">0</div><div class="stat-mini-label">Low Stock</div></div>
+            <div class="stat-mini"><div class="stat-mini-value text-green" id="statValue">$0</div><div class="stat-mini-label">Total Value</div></div>
+            <div class="stat-mini"><div class="stat-mini-value text-blue" id="statCategories">0</div><div class="stat-mini-label">Categories</div></div>
+        </div>
+
+        <div class="action-bar">
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="itemSearch" placeholder="Search items..." oninput="filterItems()">
+            </div>
+            <button class="btn btn-primary" onclick="openAddItemModal()">➕ Add Item</button>
+            <button class="btn btn-ghost" onclick="exportItems()">📥 Export</button>
+            <button class="btn btn-ghost" onclick="window.location.href='dashboard.html'">🏪 All Shops</button>
+        </div>
+
+        <div class="table-card">
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Alert At</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading items...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div class="modal-overlay" id="itemModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="itemModalTitle">Add New Item</h3>
+                <button class="modal-close" onclick="closeModal('itemModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Item Name *</label>
+                <input type="text" class="form-input" id="itemName" placeholder="e.g., Blue T-Shirt XL">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input type="text" class="form-input" id="itemCategory" placeholder="e.g., Clothing">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label class="form-label">Quantity *</label>
+                    <input type="number" class="form-input" id="itemQuantity" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price per Unit *</label>
+                    <input type="number" class="form-input" id="itemPrice" placeholder="0.00" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Low Stock Alert At</label>
+                <input type="number" class="form-input" id="itemLowStockAlert" placeholder="5" min="1" value="5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-textarea" id="itemNotes" placeholder="Optional notes..." style="min-height:60px;"></textarea>
+            </div>
+            <input type="hidden" id="editingItemId">
+            <button class="btn btn-primary" onclick="saveItem()" style="width:100%;margin-top:8px;">Save Item</button>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const shopId = urlParams.get('id');
+        let allItems = [];
+        let currentUser = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            currentUser = user;
+            loadShopDetails();
+            loadItems();
+        });
+
+        function loadShopDetails() {
+            db.collection('shops').doc(shopId).get().then((doc) => {
+                if (!doc.exists) { window.location.href = 'dashboard.html'; return; }
+                document.getElementById('shopTitle').textContent = doc.data().name || 'Shop';
+            });
+        }
+
+        function loadItems() {
+            db.collection('shops').doc(shopId).collection('items')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot((snap) => {
+                    allItems = [];
+                    snap.forEach(doc => allItems.push({ id: doc.id, ...doc.data() }));
+                    updateStats();
+                    renderItems(allItems);
+                });
+        }
+
+        function updateStats() {
+            const total = allItems.length;
+            const lowStock = allItems.filter(i => i.quantity <= (i.lowStockAlert || 5)).length;
+            const totalValue = allItems.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+            const categories = new Set(allItems.map(i => i.category).filter(Boolean)).size;
+            
+            document.getElementById('statTotalItems').textContent = total;
+            document.getElementById('statLowStock').textContent = lowStock;
+            document.getElementById('statValue').textContent = '$' + totalValue.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('statCategories').textContent = categories;
+        }
+
+        function renderItems(items) {
+            const tbody = document.getElementById('itemsTableBody');
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:60px;">
+                    <div style="font-size:40px;margin-bottom:12px;">📦</div>
+                    <div style="font-weight:600;margin-bottom:4px;">No items yet</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Add your first item to this shop</div>
+                    <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">➕ Add Item</button>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const isLow = item.quantity <= (item.lowStockAlert || 5);
+                return `
+                    <tr class="${isLow ? 'low-stock-row' : ''}">
+                        <td>
+                            <div style="font-weight:600;">${escapeHtml(item.name)}</div>
+                            ${item.category ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(item.category)}</div>` : ''}
+                        </td>
+                        <td>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="updateQty('${item.id}', -1)">−</button>
+                                <span class="qty-value" style="color:${isLow?'var(--danger)':'inherit'};">${item.quantity}</span>
+                                <button class="qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
+                            </div>
+                        </td>
+                        <td>$${(item.price || 0).toFixed(2)}</td>
+                        <td style="font-weight:600;">$${((item.quantity || 0) * (item.price || 0)).toFixed(2)}</td>
+                        <td style="font-size:12px;color:var(--text-muted);">${item.lowStockAlert || 5}</td>
+                        <td>
+                            <span style="color:${isLow?'var(--danger)':'var(--success)'};font-size:12px;font-weight:600;">
+                                <span class="status-dot ${isLow?'dot-low':'dot-ok'}"></span>
+                                ${isLow ? 'Low Stock' : 'In Stock'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-ghost btn-sm" onclick="editItem('${item.id}')">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')">🗑</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterItems() {
+            const query = document.getElementById('itemSearch').value.toLowerCase();
+            const filtered = allItems.filter(i => 
+                (i.name || '').toLowerCase().includes(query) ||
+                (i.category || '').toLowerCase().includes(query)
+            );
+            renderItems(filtered);
+        }
+
+        function updateQty(itemId, change) {
+            const itemRef = db.collection('shops').doc(shopId).collection('items').doc(itemId);
+            db.runTransaction(transaction => {
+                return transaction.get(itemRef).then(doc => {
+                    const newQty = Math.max(0, (doc.data().quantity || 0) + change);
+                    transaction.update(itemRef, { quantity: newQty });
+                });
+            }).catch(err => showToast(err.message, 'error'));
+        }
+
+        function openAddItemModal() {
+            document.getElementById('itemModalTitle').textContent = 'Add New Item';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemCategory').value = '';
+            document.getElementById('itemQuantity').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemLowStockAlert').value = '5';
+            document.getElementById('itemNotes').value = '';
+            document.getElementById('editingItemId').value = '';
+            openModal('itemModal');
+        }
+
+        function editItem(itemId) {
+            const item = allItems.find(i => i.id === itemId);
+            if (!item) return;
+            document.getElementById('itemModalTitle').textContent = 'Edit Item';
+            document.getElementById('itemName').value = item.name || '';
+            document.getElementById('itemCategory').value = item.category || '';
+            document.getElementById('itemQuantity').value = item.quantity || 0;
+            document.getElementById('itemPrice').value = item.price || 0;
+            document.getElementById('itemLowStockAlert').value = item.lowStockAlert || 5;
+            document.getElementById('itemNotes').value = item.notes || '';
+            document.getElementById('editingItemId').value = itemId;
+            openModal('itemModal');
+        }
+
+        function saveItem() {
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('itemCategory').value.trim();
+            const quantity = parseInt(document.getElementById('itemQuantity').value) || 0;
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const lowStockAlert = parseInt(document.getElementById('itemLowStockAlert').value) || 5;
+            const notes = document.getElementById('itemNotes').value.trim();
+            const editId = document.getElementById('editingItemId').value;
+
+            if (!name) { showToast('Item name is required', 'error'); return; }
+
+            const data = { name, category, quantity, price, lowStockAlert, notes, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+
+            const promise = editId 
+                ? db.collection('shops').doc(shopId).collection('items').doc(editId).update(data)
+                : db.collection('shops').doc(shopId).collection('items').add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+            promise.then(() => {
+                closeModal('itemModal');
+                showToast(editId ? 'Item updated!' : 'Item added!', 'success');
+            }).catch(err => showToast(err.message, 'error'));
+        }
+
+        function deleteItem(itemId) {
+            if (!confirm('Delete this item?')) return;
+            db.collection('shops').doc(shopId).collection('items').doc(itemId).delete()
+                .then(() => showToast('Item deleted', 'success'))
+                .catch(err => showToast(err.message, 'error'));
+        }
+
+        function deleteCurrentShop() {
+            if (!confirm('DELETE this shop and ALL its items? This cannot be undone!')) return;
+            db.collection('shops').doc(shopId).delete()
+                .then(() => { window.location.href = 'dashboard.html'; })
+                .catch(err => showToast(err.message, 'error'));
+        }
+
+        function exportItems() {
+            let csv = 'Name,Category,Quantity,Price,Total,Low Stock Alert\n';
+            allItems.forEach(i => csv += `"${i.name||''}","${i.category||''}",${i.quantity||0},${i.price||0},${(i.quantity||0)*(i.price||0)},${i.lowStockAlert||5}\n`);
+            const blob = new Blob([csv], {type:'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `shop-items-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+            showToast('Export downloaded!', 'success');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showToast(m, t='info') {
+            const e = document.querySelector('.toast'); if(e) e.remove();
+            const d = document.createElement('div'); d.className = 'toast';
+            d.innerHTML = `<span>${t==='success'?'✅':t==='error'?'❌':'ℹ️'}</span> ${m}`;
+            document.body.appendChild(d);
+            setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity 0.3s';setTimeout(()=>d.remove(),300);},3000);
+        }
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); }));
+        document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay').forEach(m => { if(m.style.display==='flex') closeModal(m.id); }); });
+    </script>
+</body>
+</html>

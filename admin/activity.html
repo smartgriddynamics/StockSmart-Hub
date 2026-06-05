@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs — Admin Panel</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #7c3aed; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --info: #0ea5e9;
+            --bg-base: #0a0a1a; --bg-card: rgba(18,18,42,0.8);
+            --border-subtle: rgba(255,255,255,0.06); --border-medium: rgba(255,255,255,0.1);
+            --text-primary: #f1f1f6; --text-secondary: #8b8ba6; --text-muted: #6b6b80;
+            --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-base); color:var(--text-primary); display:flex; min-height:100vh; -webkit-font-smoothing:antialiased; }
+        body::before { content:''; position:fixed; inset:0; background:radial-gradient(circle at 30% 40%, rgba(124,58,237,0.06) 0%, transparent 50%); pointer-events:none; z-index:0; }
+        .sidebar { width:260px; height:100vh; position:fixed; left:0; top:0; background:rgba(18,18,42,0.9); backdrop-filter:blur(20px); border-right:1px solid var(--border-subtle); z-index:100; padding:24px 16px; display:flex; flex-direction:column; }
+        .sidebar-brand { display:flex; align-items:center; gap:10px; padding:0 8px 20px; margin-bottom:8px; border-bottom:1px solid var(--border-subtle); }
+        .brand-icon { width:38px; height:38px; background:linear-gradient(135deg,#7c3aed,#5b5af7); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:18px; }
+        .brand-name { font-size:16px; font-weight:700; }
+        .nav-section { margin-bottom:12px; }
+        .nav-section-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-muted); padding:12px 10px 8px; }
+        .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); color:var(--text-secondary); text-decoration:none; font-size:13px; font-weight:500; transition:all 0.2s; cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:inherit; }
+        .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--text-primary); }
+        .nav-item.active { background:rgba(124,58,237,0.12); color:#a78bfa; font-weight:600; }
+        .nav-icon { font-size:16px; width:20px; text-align:center; }
+        .main-content { margin-left:260px; flex:1; padding:28px 36px; position:relative; z-index:1; }
+        .page-title { font-size:26px; font-weight:700; margin-bottom:4px; }
+        .page-subtitle { font-size:13px; color:var(--text-muted); margin-bottom:28px; }
+        .top-actions { display:flex; gap:10px; margin-bottom:24px; }
+        .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; cursor:pointer; border:none; font-family:inherit; transition:all 0.2s; }
+        .btn-ghost { background:transparent; color:var(--text-secondary); border:1px solid var(--border-medium); }
+        .btn-ghost:hover { background:rgba(255,255,255,0.04); color:var(--text-primary); }
+        .btn-danger { background:rgba(239,68,68,0.1); color:var(--danger); border:1px solid rgba(239,68,68,0.2); }
+        
+        .log-list { display:flex; flex-direction:column; gap:2px; }
+        .log-item {
+            display:flex; align-items:flex-start; gap:14px; padding:14px 18px;
+            background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);
+            transition:all 0.2s;
+        }
+        .log-item:hover { border-color:var(--border-medium); }
+        .log-icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+        .log-content { flex:1; }
+        .log-message { font-size:13px; font-weight:500; }
+        .log-detail { font-size:11px; color:var(--text-muted); margin-top:3px; }
+        .log-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+        .badge { display:inline-flex; padding:3px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+        .badge-info { background:rgba(14,165,233,0.1); color:var(--info); }
+        .badge-success { background:rgba(16,185,129,0.1); color:var(--success); }
+        .badge-warning { background:rgba(245,158,11,0.1); color:var(--warning); }
+        .badge-danger { background:rgba(239,68,68,0.1); color:var(--danger); }
+        .toast { position:fixed; bottom:28px; right:28px; background:var(--bg-card); border:1px solid var(--border-medium); padding:14px 22px; border-radius:var(--radius-sm); z-index:2000; font-size:13px; animation:toastIn 0.3s ease; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand"><div class="brand-icon">⚡</div><span class="brand-name">StockSmart</span></div>
+        <nav>
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Overview</a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span> Users</a>
+                <a href="shops.html" class="nav-item"><span class="nav-icon">🏪</span> Shops</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+                <a href="activity.html" class="nav-item active"><span class="nav-icon">📋</span> Activity Logs</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">System</div>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+                <button class="nav-item" onclick="handleLogout()"><span class="nav-icon">🚪</span> Sign Out</button>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="page-title">Activity Logs</h1>
+        <p class="page-subtitle">Monitor all platform activities and changes</p>
+
+        <div class="top-actions">
+            <button class="btn btn-ghost" onclick="filterLogs('all')">📋 All</button>
+            <button class="btn btn-ghost" onclick="filterLogs('user')">👥 Users</button>
+            <button class="btn btn-ghost" onclick="filterLogs('shop')">🏪 Shops</button>
+            <button class="btn btn-ghost" onclick="filterLogs('system')">⚙️ System</button>
+            <button class="btn btn-danger" onclick="clearLogs()" style="margin-left:auto;">🗑 Clear Logs</button>
+        </div>
+
+        <div class="log-list" id="logList">
+            <div class="log-item">
+                <div class="log-icon">🆕</div>
+                <div class="log-content">
+                    <div class="log-message">New user registered: <strong>John Smith</strong></div>
+                    <div class="log-detail">Email: john@example.com • Plan: Trial</div>
+                </div>
+                <span class="badge badge-success">User</span>
+                <span class="log-time">2 min ago</span>
+            </div>
+            <div class="log-item">
+                <div class="log-icon">🏪</div>
+                <div class="log-content">
+                    <div class="log-message">New shop created: <strong>Downtown Flagship</strong></div>
+                    <div class="log-detail">Owner: Sarah Johnson • Address: 123 Main St</div>
+                </div>
+                <span class="badge badge-info">Shop</span>
+                <span class="log-time">15 min ago</span>
+            </div>
+            <div class="log-item">
+                <div class="log-icon">⚠️</div>
+                <div class="log-content">
+                    <div class="log-message">Low stock alert: <strong>Mall Outlet</strong> has 12 items below threshold</div>
+                    <div class="log-detail">Shop ID: SHOP-004 • Requires immediate attention</div>
+                </div>
+                <span class="badge badge-warning">Alert</span>
+                <span class="log-time">28 min ago</span>
+            </div>
+            <div class="log-item">
+                <div class="log-icon">🔐</div>
+                <div class="log-content">
+                    <div class="log-message">Admin login: <strong>Super Admin</strong> accessed the panel</div>
+                    <div class="log-detail">IP: 192.168.1.1 • Browser: Chrome 125</div>
+                </div>
+                <span class="badge badge-info">System</span>
+                <span class="log-time">45 min ago</span>
+            </div>
+            <div class="log-item">
+                <div class="log-icon">💳</div>
+                <div class="log-content">
+                    <div class="log-message">Subscription upgraded: <strong>Mike Wilson</strong> moved to Premium</div>
+                    <div class="log-detail">Previous: Trial • New: Premium ($29/mo)</div>
+                </div>
+                <span class="badge badge-success">Billing</span>
+                <span class="log-time">1 hour ago</span>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        auth.onAuthStateChanged(u => { if(!u){window.location.href='login.html';return;} db.collection('admins').doc(u.uid).get().then(d=>{if(!d.exists){auth.signOut();window.location.href='login.html';}}); });
+
+        function filterLogs(type) {
+            showToast(`Filtering by: ${type}`, 'info');
+        }
+
+        function clearLogs() {
+            if(confirm('Clear all activity logs?')) {
+                showToast('Logs cleared successfully', 'success');
+            }
+        }
+
+        function handleLogout() { auth.signOut().then(()=>window.location.href='login.html'); }
+        function showToast(m,t='info'){const e=document.querySelector('.toast');if(e)e.remove();const d=document.createElement('div');d.className='toast';d.innerHTML=`<span>${t==='success'?'✅':t==='error'?'❌':'ℹ️'}</span> ${m}`;document.body.appendChild(d);setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity 0.3s';setTimeout(()=>d.remove(),300);},3000);}
+    </script>
+</body>
+</html>

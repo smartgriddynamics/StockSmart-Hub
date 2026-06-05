@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing — StockSmart Hub</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #5b5af7; --primary-hover: #4a49e0; --secondary: #0ea5e9;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --bg-base: #0a0a1a; --bg-elevated: #12122a; --bg-card: rgba(18, 18, 42, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.06); --border-medium: rgba(255, 255, 255, 0.1);
+            --text-primary: #f1f1f6; --text-secondary: #8b8ba6; --text-muted: #6b6b80;
+            --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-base); color: var(--text-primary);
+            min-height: 100vh; -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(circle at 30% 40%, rgba(91,90,247,0.06) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+        .top-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(18,18,42,0.9); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px; display: flex; align-items: center; gap: 16px;
+        }
+        .back-btn {
+            background: none; border: 1px solid var(--border-medium); color: var(--text-secondary);
+            padding: 8px 14px; border-radius: var(--radius-sm); cursor: pointer;
+            font-size: 13px; font-family: inherit; transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .page-title { font-size: 20px; font-weight: 700; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 28px; position: relative; z-index: 1; }
+        
+        .current-plan {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 32px;
+            margin-bottom: 28px; text-align: center;
+        }
+        .plan-icon { font-size: 56px; margin-bottom: 12px; }
+        .plan-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .plan-price { font-size: 42px; font-weight: 800; margin: 12px 0; }
+        .plan-period { font-size: 14px; color: var(--text-muted); }
+        .plan-features { list-style: none; margin: 20px 0; display: inline-block; text-align: left; }
+        .plan-features li { padding: 6px 0; font-size: 13px; color: var(--text-secondary); }
+        .plan-features li::before { content: '✓'; color: var(--success); margin-right: 8px; font-weight: 700; }
+
+        .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 28px; }
+        .plan-card {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+            padding: 28px; text-align: center; transition: all 0.3s; cursor: pointer;
+        }
+        .plan-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(91,90,247,0.15); }
+        .plan-card.featured { border-color: var(--primary); position: relative; }
+        .featured-badge {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: white; padding: 4px 16px;
+            border-radius: 100px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .plan-card-icon { font-size: 36px; margin-bottom: 12px; }
+        .plan-card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .plan-card-price { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+        .plan-card-period { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+        .plan-card-features { list-style: none; text-align: left; margin-bottom: 20px; }
+        .plan-card-features li { padding: 5px 0; font-size: 12px; color: var(--text-secondary); }
+        .plan-card-features li::before { content: '✓'; color: var(--success); margin-right: 6px; font-weight: 700; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 10px 20px; border-radius: var(--radius-sm); font-size: 12px;
+            font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+            transition: all 0.2s; width: 100%;
+        }
+        .btn-primary { background: linear-gradient(135deg,var(--primary),#7c3aed); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-medium); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .btn-current { background: rgba(255,255,255,0.04); color: var(--text-muted); cursor: default; }
+
+        .billing-history {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 28px;
+        }
+        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 0; border-bottom: 1px solid var(--border-subtle);
+            font-size: 13px;
+        }
+        .toast { position: fixed; bottom: 28px; right: 28px; background: var(--bg-elevated); border: 1px solid var(--border-medium); padding: 14px 22px; border-radius: var(--radius-sm); z-index: 2000; font-size: 13px; animation: toastIn 0.3s ease; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .plans-grid { grid-template-columns: 1fr; } .container { padding: 16px; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <button class="back-btn" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+        <h1 class="page-title">Billing & Plans</h1>
+    </nav>
+
+    <div class="container">
+        <div class="current-plan" id="currentPlanSection">
+            <div class="plan-icon">💎</div>
+            <div class="plan-title" id="currentPlanName">Free Trial</div>
+            <div class="plan-price" id="currentPlanPrice">$0</div>
+            <div class="plan-period" id="currentPlanPeriod">14 days trial</div>
+            <ul class="plan-features" id="currentPlanFeatures"></ul>
+        </div>
+
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;text-align:center;">Choose Your Plan</h2>
+        
+        <div class="plans-grid">
+            <div class="plan-card" onclick="selectPlan('trial')">
+                <div class="plan-card-icon">🆓</div>
+                <div class="plan-card-title">Free Trial</div>
+                <div class="plan-card-price">$0</div>
+                <div class="plan-card-period">14 days</div>
+                <ul class="plan-card-features">
+                    <li>Up to 3 shops</li>
+                    <li>500 items total</li>
+                    <li>Basic analytics</li>
+                    <li>Email support</li>
+                </ul>
+                <button class="btn btn-current">Current Plan</button>
+            </div>
+
+            <div class="plan-card featured" onclick="selectPlan('premium')">
+                <div class="featured-badge">Most Popular</div>
+                <div class="plan-card-icon">💎</div>
+                <div class="plan-card-title">Premium</div>
+                <div class="plan-card-price">$29</div>
+                <div class="plan-card-period">per month</div>
+                <ul class="plan-card-features">
+                    <li>Up to 50 shops</li>
+                    <li>10,000 items</li>
+                    <li>Advanced analytics</li>
+                    <li>Priority support</li>
+                    <li>Export data</li>
+                    <li>Custom alerts</li>
+                </ul>
+                <button class="btn btn-primary">Upgrade to Premium</button>
+            </div>
+
+            <div class="plan-card" onclick="selectPlan('enterprise')">
+                <div class="plan-card-icon">🏢</div>
+                <div class="plan-card-title">Enterprise</div>
+                <div class="plan-card-price">$99</div>
+                <div class="plan-card-period">per month</div>
+                <ul class="plan-card-features">
+                    <li>Unlimited shops</li>
+                    <li>Unlimited items</li>
+                    <li>Full analytics suite</li>
+                    <li>Dedicated support</li>
+                    <li>API access</li>
+                    <li>Custom integrations</li>
+                    <li>Team management</li>
+                </ul>
+                <button class="btn btn-primary">Upgrade to Enterprise</button>
+            </div>
+        </div>
+
+        <div class="billing-history">
+            <h3 class="section-title">Billing History</h3>
+            <div class="history-item">
+                <span>No billing history yet</span>
+                <span style="color:var(--text-muted);">—</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        let currentUser = null;
+        auth.onAuthStateChanged(u => { if(!u){window.location.href='../index.html';return;} currentUser=u; loadBilling(); });
+
+        function loadBilling() {
+            db.collection('users').doc(currentUser.uid).get().then(doc => {
+                if(!doc.exists) return;
+                const data = doc.data();
+                const plan = data.plan || 'trial';
+                
+                const planNames = { trial: 'Free Trial', premium: 'Premium', enterprise: 'Enterprise' };
+                const planPrices = { trial: '$0', premium: '$29', enterprise: '$99' };
+                const planPeriods = { trial: '14 days trial', premium: 'per month', enterprise: 'per month' };
+                const features = {
+                    trial: ['Up to 3 shops', '500 items total', 'Basic analytics', 'Email support'],
+                    premium: ['Up to 50 shops', '10,000 items', 'Advanced analytics', 'Priority support', 'Export data', 'Custom alerts'],
+                    enterprise: ['Unlimited shops', 'Unlimited items', 'Full analytics suite', 'Dedicated support', 'API access', 'Custom integrations', 'Team management']
+                };
+
+                document.getElementById('currentPlanName').textContent = planNames[plan];
+                document.getElementById('currentPlanPrice').textContent = planPrices[plan];
+                document.getElementById('currentPlanPeriod').textContent = planPeriods[plan];
+                document.getElementById('currentPlanFeatures').innerHTML = features[plan].map(f => `<li>${f}</li>`).join('');
+            });
+        }
+
+        function selectPlan(plan) {
+            if (!confirm(`Switch to ${plan.charAt(0).toUpperCase()+plan.slice(1)} plan?`)) return;
+            db.collection('users').doc(currentUser.uid).update({ plan, planUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => { showToast(`Plan updated to ${plan}!`, 'success'); loadBilling(); })
+                .catch(err => showToast(err.message, 'error'));
+        }
+
+        function showToast(m, t='info') {
+            const e = document.querySelector('.toast'); if(e) e.remove();
+            const d = document.createElement('div'); d.className = 'toast';
+            d.innerHTML = `<span>${t==='success'?'✅':t==='error'?'❌':'ℹ️'}</span> ${m}`;
+            document.body.appendChild(d);
+            setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity 0.3s';setTimeout(()=>d.remove(),300);},3000);
+        }
+    </script>
+</body>
+</html>

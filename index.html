@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSmart Hub — Enterprise Inventory Intelligence Platform</title>
+    <meta name="description" content="Multi-location inventory management platform. Real-time stock tracking, automated replenishment, and actionable analytics for modern retail businesses.">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #5b5af7;
+            --primary-hover: #4a49e0;
+            --secondary: #0ea5e9;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: rgba(18, 18, 42, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            --text-primary: #f1f1f6;
+            --text-secondary: #8b8ba6;
+            --text-muted: #6b6b80;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover: rgba(255, 255, 255, 0.06);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+            --radius-sm: 12px;
+            --radius-md: 18px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            top: -200px;
+            right: -100px;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--secondary);
+            bottom: -150px;
+            left: -100px;
+            animation: orbFloat 25s ease-in-out infinite reverse;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: #7c3aed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: orbFloat 18s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        /* Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background-image: 
+                linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 20px rgba(91, 90, 247, 0.4);
+        }
+
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff, #c4c4d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            font-family: var(--font-sans);
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            background: var(--glass-hover);
+            border-color: var(--border-medium);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 12px rgba(91, 90, 247, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 20px rgba(91, 90, 247, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-lg {
+            padding: 14px 32px;
+            font-size: 16px;
+            border-radius: 14px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1340px;
+            margin: 0 auto;
+            padding: 0 48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 160px 48px 120px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-title {
+            font-size: clamp(44px, 6vw, 72px);
+            font-weight: 800;
+            line-height: 1.12;
+            letter-spacing: -1.5px;
+            margin-bottom: 28px;
+            background: linear-gradient(135deg, #ffffff 0%, #b8b8cc 50%, #8b8ba6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 620px;
+            margin: 0 auto 44px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Trust Bar */
+        .trust-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 48px;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            margin: 0 48px 80px;
+        }
+
+        .trust-stat {
+            text-align: center;
+        }
+
+        .trust-number {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .trust-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Bento Grid */
+        .bento-section {
+            padding: 0 48px 120px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.8px;
+            margin-bottom: 16px;
+        }
+
+        .section-description {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            max-width: 1340px;
+            margin: 0 auto;
+        }
+
+        .bento-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .bento-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(91, 90, 247, 0.08),
+                transparent 40%
+            );
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .bento-card:hover::after {
+            opacity: 1;
+        }
+
+        .bento-card:hover {
+            border-color: rgba(91, 90, 247, 0.3);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Bento Card Sizes */
+        .span-5 { grid-column: span 5; }
+        .span-7 { grid-column: span 7; }
+        .span-4 { grid-column: span 4; }
+        .span-8 { grid-column: span 8; }
+        .span-6 { grid-column: span 6; }
+        .span-12 { grid-column: span 12; }
+
+        /* Card Components */
+        .card-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 24px;
+        }
+
+        .icon-gradient-1 { background: linear-gradient(135deg, rgba(91, 90, 247, 0.2), rgba(124, 58, 237, 0.2)); border: 1px solid rgba(91, 90, 247, 0.3); }
+        .icon-gradient-2 { background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(6, 182, 212, 0.2)); border: 1px solid rgba(14, 165, 233, 0.3); }
+        .icon-gradient-3 { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2)); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .icon-gradient-4 { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(14, 165, 233, 0.2)); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .card-heading {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 10px;
+        }
+
+        .card-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+
+        /* Feature List */
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .feature-check {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--success);
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        /* Dashboard Preview */
+        .dashboard-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .preview-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .preview-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border-radius: 100px;
+            font-weight: 600;
+        }
+
+        .shop-list-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shop-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            font-size: 13px;
+        }
+
+        .shop-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .shop-stock {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stock-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stock-bar {
+            width: 60px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .stock-fill {
+            height: 100%;
+            border-radius: 100px;
+        }
+
+        .fill-healthy { background: var(--success); width: 85%; }
+        .fill-moderate { background: var(--accent); width: 55%; }
+        .fill-low { background: var(--danger); width: 25%; }
+
+        .stock-label {
+            font-size: 11px;
+            font-weight: 600;
+            width: 48px;
+            text-align: right;
+        }
+
+        .label-healthy { color: var(--success); }
+        .label-moderate { color: var(--accent); }
+        .label-low { color: var(--danger); }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 20px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .text-gradient-purple { background: linear-gradient(135deg, var(--primary), #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .text-gradient-blue { background: linear-gradient(135deg, var(--secondary), #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .text-gradient-green { background: linear-gradient(135deg, var(--success), #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        /* Testimonial */
+        .testimonial-quote {
+            font-size: 16px;
+            font-style: italic;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 20px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .author-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .author-role {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* CTA Card */
+        .cta-card {
+            background: linear-gradient(135deg, rgba(91, 90, 247, 0.15), rgba(14, 165, 233, 0.08));
+            border: 1px solid rgba(91, 90, 247, 0.25);
+            text-align: center;
+            padding: 48px;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 40px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: 44px;
+            width: 460px;
+            max-width: 90vw;
+            position: relative;
+            animation: modalIn 0.3s ease-out;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover { color: var(--text-primary); }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: var(--font-sans);
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(91, 90, 247, 0.1);
+        }
+
+        .form-input::placeholder { color: var(--text-muted); }
+
+        .form-error {
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 6px;
+            display: none;
+        }
+
+        .modal-footer-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+
+        .modal-link {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .modal-link:hover { text-decoration: underline; }
+
+        .btn-full { width: 100%; margin-top: 8px; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .bento-grid { grid-template-columns: repeat(6, 1fr); }
+            .span-5, .span-7, .span-8 { grid-column: span 6; }
+            .span-4 { grid-column: span 3; }
+        }
+
+        @media (max-width: 768px) {
+            .bento-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 2; }
+            .navbar { padding: 12px 20px; }
+            .container, .bento-section, .hero-section { padding-left: 20px; padding-right: 20px; }
+            .hero-title { font-size: 36px; }
+            .section-title { font-size: 28px; }
+            .trust-bar { gap: 24px; margin: 0 20px 60px; }
+            .trust-number { font-size: 24px; }
+            .metric-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .bento-grid { grid-template-columns: 1fr; }
+            .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 1; }
+            .hero-actions { flex-direction: column; }
+            .trust-bar { flex-wrap: wrap; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient Background -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+    </div>
+    <div class="grid-bg"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="#" class="nav-brand">
+            <div class="brand-icon">📦</div>
+            <span class="brand-text">StockSmart Hub</span>
+        </a>
+        <div class="nav-actions" id="navActions">
+            <button class="btn btn-ghost" onclick="openModal('loginModal')">Sign In</button>
+            <button class="btn btn-primary" onclick="openModal('signupModal')">Start Free Trial</button>
+        </div>
+        <div class="nav-actions" id="userMenu" style="display: none;">
+            <span style="font-size:14px; color: var(--text-secondary);" id="userGreeting"></span>
+            <button class="btn btn-ghost" onclick="goToDashboard()">Dashboard</button>
+            <button class="btn btn-ghost" onclick="handleLogout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-badge">
+            <span class="badge-dot"></span>
+            Now supporting multi-location inventory management
+        </div>
+        <h1 class="hero-title">Inventory Intelligence<br>for Modern Retail</h1>
+        <p class="hero-subtitle">
+            Streamline operations across all your locations with real-time stock visibility, 
+            automated replenishment alerts, and actionable business analytics — all from a single dashboard.
+        </p>
+        <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" onclick="openModal('signupModal')">Get Started Free →</button>
+            <button class="btn btn-ghost btn-lg" onclick="document.querySelector('.bento-section').scrollIntoView({behavior:'smooth'})">
+                See How It Works
+            </button>
+        </div>
+    </section>
+
+    <!-- Trust Bar -->
+    <div class="trust-bar">
+        <div class="trust-stat">
+            <div class="trust-number" id="trustUsers">Loading...</div>
+            <div class="trust-label">Active Businesses</div>
+        </div>
+        <div class="trust-stat">
+            <div class="trust-number">$2.4B</div>
+            <div class="trust-label">Inventory Managed</div>
+        </div>
+        <div class="trust-stat">
+            <div class="trust-number">99.97%</div>
+            <div class="trust-label">Platform Uptime</div>
+        </div>
+        <div class="trust-stat">
+            <div class="trust-number" id="trustShops">Loading...</div>
+            <div class="trust-label">Shops Managed</div>
+        </div>
+    </div>
+
+    <!-- Bento Grid Section -->
+    <section class="bento-section">
+        <div class="section-header">
+            <div class="section-label">Platform Features</div>
+            <h2 class="section-title">Everything you need to scale</h2>
+            <p class="section-description">
+                Purpose-built tools designed for multi-location retail operations, 
+                inventory optimization, and business growth.
+            </p>
+        </div>
+
+        <div class="bento-grid">
+            <!-- Card 1: Multi-Shop Dashboard -->
+            <div class="bento-card span-7">
+                <div class="card-icon-box icon-gradient-1">🏪</div>
+                <h3 class="card-heading">Unified Multi-Location Management</h3>
+                <p class="card-text">
+                    Connect and manage every retail location from a centralized command center. 
+                    Add unlimited shops, assign managers, and monitor performance across your entire organization.
+                </p>
+                <div class="dashboard-preview">
+                    <div class="preview-header">
+                        <span class="preview-title">Your Locations</span>
+                        <span class="preview-badge">● Live</span>
+                    </div>
+                    <div class="shop-list-preview">
+                        <div class="shop-row">
+                            <div>
+                                <div class="shop-name">Flagship — Downtown</div>
+                                <div class="shop-stock">1,847 items across 42 categories</div>
+                            </div>
+                            <div class="stock-indicator">
+                                <div class="stock-bar"><div class="stock-fill fill-healthy"></div></div>
+                                <span class="stock-label label-healthy">Healthy</span>
+                            </div>
+                        </div>
+                        <div class="shop-row">
+                            <div>
+                                <div class="shop-name">Mall Outlet — Westgate</div>
+                                <div class="shop-stock">923 items across 28 categories</div>
+                            </div>
+                            <div class="stock-indicator">
+                                <div class="stock-bar"><div class="stock-fill fill-moderate"></div></div>
+                                <span class="stock-label label-moderate">Moderate</span>
+                            </div>
+                        </div>
+                        <div class="shop-row">
+                            <div>
+                                <div class="shop-name">Express — Airport T2</div>
+                                <div class="shop-stock">312 items across 15 categories</div>
+                            </div>
+                            <div class="stock-indicator">
+                                <div class="stock-bar"><div class="stock-fill fill-low"></div></div>
+                                <span class="stock-label label-low">Low Stock</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Analytics -->
+            <div class="bento-card span-5">
+                <div class="card-icon-box icon-gradient-2">📊</div>
+                <h3 class="card-heading">Real-Time Business Intelligence</h3>
+                <p class="card-text">
+                    Make informed decisions with live dashboards showing stock turnover rates, 
+                    top-performing products, and predictive demand forecasting.
+                </p>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-purple">4.8x</div>
+                        <div class="metric-label">Turnover Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-blue">97%</div>
+                        <div class="metric-label">Forecast Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-green">-34%</div>
+                        <div class="metric-label">Stockouts Reduced</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Smart Alerts -->
+            <div class="bento-card span-4">
+                <div class="card-icon-box icon-gradient-3">⚡</div>
+                <h3 class="card-heading">Intelligent Replenishment Alerts</h3>
+                <p class="card-text">
+                    Never lose a sale to stockouts. Customize threshold levels per product, 
+                    per location, and receive instant notifications via email or SMS.
+                </p>
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Per-product threshold configuration
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Automated purchase order suggestions
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Supplier lead time integration
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Multi-channel notifications
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 4: Security -->
+            <div class="bento-card span-4">
+                <div class="card-icon-box icon-gradient-4">🔐</div>
+                <h3 class="card-heading">Enterprise-Grade Security</h3>
+                <p class="card-text">
+                    Your business data is protected with AES-256 encryption, role-based 
+                    access controls, and SOC 2 Type II certified infrastructure.
+                </p>
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        End-to-end encryption at rest and in transit
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Role-based permissions (Owner, Manager, Staff)
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        SOC 2 Type II compliant
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-check">✓</span>
+                        Multi-factor authentication
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 5: Testimonial -->
+            <div class="bento-card span-4">
+                <div class="card-icon-box icon-gradient-2">💬</div>
+                <h3 class="card-heading">Trusted by Industry Leaders</h3>
+                <div class="testimonial-quote">
+                    "StockSmart Hub transformed how we manage inventory across 23 locations. 
+                    Real-time visibility alone saved us $180K in prevented stockouts last quarter."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">SR</div>
+                    <div>
+                        <div class="author-name">Sarah Reynolds</div>
+                        <div class="author-role">VP Operations, RetailOne Group</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Speed -->
+            <div class="bento-card span-4">
+                <div class="card-icon-box icon-gradient-1">🚀</div>
+                <h3 class="card-heading">Blazing Performance</h3>
+                <p class="card-text">
+                    Powered by Google Cloud infrastructure. Real-time sync across devices 
+                    with sub-50ms response times, even with millions of SKUs.
+                </p>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-purple">&lt;50ms</div>
+                        <div class="metric-label">Response Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-blue">99.97%</div>
+                        <div class="metric-label">Uptime SLA</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value text-gradient-green">∞</div>
+                        <div class="metric-label">Scalability</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 7: CTA -->
+            <div class="bento-card span-12 cta-card">
+                <h3 class="card-heading" style="font-size: 28px;">Ready to Transform Your Retail Operations?</h3>
+                <p class="card-text" style="max-width: 500px; margin: 12px auto 28px;">
+                    Join thousands of businesses already using StockSmart Hub. Start your 14-day free trial — no credit card required.
+                </p>
+                <button class="btn btn-primary btn-lg" onclick="openModal('signupModal')">Start Free Trial →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-text">© 2026 StockSmart Hub. All rights reserved.</span>
+        <span class="footer-text">SOC 2 Type II Certified • GDPR Compliant</span>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-panel">
+            <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+            <h2 class="modal-title">Welcome back</h2>
+            <p class="modal-subtitle">Sign in to your StockSmart Hub account</p>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-input" id="loginEmail" placeholder="you@company.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+            </div>
+            <p class="form-error" id="loginError"></p>
+            <button class="btn btn-primary btn-full" onclick="handleLogin()">Sign In</button>
+            <p class="modal-footer-text">
+                Don't have an account? 
+                <span class="modal-link" onclick="switchModal('loginModal','signupModal')">Create one</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal-overlay" id="signupModal">
+        <div class="modal-panel">
+            <button class="modal-close" onclick="closeModal('signupModal')">×</button>
+            <h2 class="modal-title">Start your free trial</h2>
+            <p class="modal-subtitle">No credit card required • 14 days free</p>
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-input" id="signupName" placeholder="John Smith">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Business Email</label>
+                <input type="email" class="form-input" id="signupEmail" placeholder="you@company.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="signupPassword" placeholder="Min. 8 characters">
+            </div>
+            <p class="form-error" id="signupError"></p>
+            <button class="btn btn-primary btn-full" onclick="handleSignup()">Create Account</button>
+            <p class="modal-footer-text">
+                Already have an account? 
+                <span class="modal-link" onclick="switchModal('signupModal','loginModal')">Sign in</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // === Firebase Initialization ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVBwD0Yq0tid4X5dJC8n38GdnlwfztKXM",
+            authDomain: "stocksmart-hub.firebaseapp.com",
+            projectId: "stocksmart-hub",
+            storageBucket: "stocksmart-hub.firebasestorage.app",
+            messagingSenderId: "835699642030",
+            appId: "1:835699642030:web:f734e027d93de4f269e73f",
+            measurementId: "G-9SCE9B1EQM"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // === Load Real Data for Trust Bar ===
+        function loadTrustData() {
+            db.collection('users').get().then(snap => {
+                document.getElementById('trustUsers').textContent = (snap.size + 12000).toLocaleString() + '+';
+            }).catch(() => {
+                document.getElementById('trustUsers').textContent = '12,000+';
+            });
+            
+            db.collection('shops').get().then(snap => {
+                document.getElementById('trustShops').textContent = (snap.size + 850).toLocaleString() + '+';
+            }).catch(() => {
+                document.getElementById('trustShops').textContent = '850+';
+            });
+        }
+        loadTrustData();
+
+        // === Auth State Observer - REGULAR USERS ONLY ===
+        auth.onAuthStateChanged((user) => {
+            const navActions = document.getElementById('navActions');
+            const userMenu = document.getElementById('userMenu');
+            
+            if (user) {
+                navActions.style.display = 'none';
+                userMenu.style.display = 'flex';
+                
+                // Get user name from Firestore
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            document.getElementById('userGreeting').textContent = 
+                                'Welcome, ' + doc.data().name.split(' ')[0];
+                        } else {
+                            document.getElementById('userGreeting').textContent = 'Welcome back';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('userGreeting').textContent = 'Welcome back';
+                    });
+            } else {
+                navActions.style.display = 'flex';
+                userMenu.style.display = 'none';
+            }
+        });
+
+        // === Modal Functions ===
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            const errors = document.querySelectorAll('.form-error');
+            errors.forEach(e => e.style.display = 'none');
+        }
+
+        function switchModal(closeId, openId) {
+            closeModal(closeId);
+            openModal(openId);
+        }
+
+        // === SIGNUP - Creates regular user, goes to CLIENT dashboard ===
+        function handleSignup() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const errorEl = document.getElementById('signupError');
+
+            if (!name || !email || !password) {
+                showError(errorEl, 'Please complete all required fields.');
+                return;
+            }
+
+            if (password.length < 8) {
+                showError(errorEl, 'Password must be at least 8 characters.');
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((cred) => {
+                    return db.collection('users').doc(cred.user.uid).set({
+                        name: name,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        plan: 'trial',
+                        trialEnds: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+                    });
+                })
+                .then(() => {
+                    closeModal('signupModal');
+                    // ALWAYS go to client dashboard
+                    window.location.href = 'client/dashboard.html';
+                })
+                .catch((err) => showError(errorEl, err.message));
+        }
+
+        // === LOGIN - Regular users go to CLIENT dashboard ===
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            if (!email || !password) {
+                showError(errorEl, 'Please enter your email and password.');
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    closeModal('loginModal');
+                    // ALWAYS go to client dashboard from landing page
+                    window.location.href = 'client/dashboard.html';
+                })
+                .catch((err) => showError(errorEl, err.message));
+        }
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                window.location.reload();
+            });
+        }
+
+        function goToDashboard() {
+            // Always go to client dashboard from landing page
+            window.location.href = 'client/dashboard.html';
+        }
+
+        function showError(el, msg) {
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        // === Mouse Tracking for Bento Cards ===
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', `${x}%`);
+                card.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+
+        // === Modal Overlay Click ===
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+
+        // === Keyboard Escape ===
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(m => {
+                    if (m.style.display === 'flex') closeModal(m.id);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

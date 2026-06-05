@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal — StockSmart Hub</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --bg: #0a0a1a;
+            --card-bg: rgba(18, 18, 42, 0.95);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f1f1f6;
+            --text-secondary: #8b8ba6;
+            --text-muted: #6b6b80;
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 8s infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-120px) translateX(40px); }
+            50% { transform: translateY(-60px) translateX(-40px); }
+            75% { transform: translateY(-180px) translateX(-20px); }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 440px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 48px 44px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .shield-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #7c3aed, #5b5af7);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.35);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(124, 58, 237, 0.35); }
+            50% { box-shadow: 0 8px 48px rgba(124, 58, 237, 0.55); }
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            background: rgba(124, 58, 237, 0.15);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            color: #a78bfa;
+            margin: 0 auto 16px;
+            width: fit-content;
+        }
+
+        .login-title {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-title h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .login-title p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px 14px 42px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.25s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+
+        .form-input::placeholder { color: var(--text-muted); }
+
+        .remember-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            font-size: 13px;
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .forgot-link:hover { text-decoration: underline; }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #5b5af7);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 6px 28px rgba(124, 58, 237, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-alert {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-left: 3px solid var(--danger);
+            color: #fca5a5;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: #a78bfa; }
+
+        .credentials-hint {
+            text-align: center;
+            margin-top: 20px;
+            padding: 14px;
+            background: rgba(124, 58, 237, 0.06);
+            border-radius: 10px;
+            border: 1px dashed rgba(124, 58, 237, 0.2);
+        }
+
+        .credentials-hint p {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .credentials-hint code {
+            background: rgba(124, 58, 237, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #a78bfa;
+        }
+
+        @media (max-width: 480px) {
+            .login-wrapper { width: 90%; }
+            .login-card { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="bg-particles" id="particles"></div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="admin-badge">
+                <span>🔐</span> Administrator Access
+            </div>
+
+            <div class="shield-icon">🛡️</div>
+
+            <div class="login-title">
+                <h1>Admin Portal</h1>
+                <p>Secure access to StockSmart Hub management</p>
+            </div>
+
+            <div class="error-alert" id="errorAlert"></div>
+
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">📧</span>
+                    <input type="email" class="form-input" id="email" placeholder="admin@stocksmart.com" autocomplete="email">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" class="form-input" id="password" placeholder="••••••••" autocomplete="current-password">
+                </div>
+            </div>
+
+            <div class="remember-row">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="rememberMe">
+                    <span class="checkbox-label">Remember me</span>
+                </label>
+                <span class="forgot-link" onclick="showToast('Contact super admin for password reset')">Forgot password?</span>
+            </div>
+
+            <button class="btn-submit" id="loginBtn" onclick="handleLogin()">
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">Sign In to Admin Panel</span>
+            </button>
+
+            <div class="credentials-hint">
+                <p>Default credentials: <code>admin@stocksmart.com</code> / <code>Admin@123456</code></p>
+            </div>
+        </div>
+
+        <a href="../index.html" class="back-link">← Back to Landing Page</a>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        // Create particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 60; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
+                particle.style.opacity = Math.random() * 0.4 + 0.1;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Login handler
+        function handleLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('errorAlert');
+            const btn = document.getElementById('loginBtn');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btnText');
+
+            if (!email || !password) {
+                showError('Please enter both email and password');
+                return;
+            }
+
+            // Show loading
+            btn.classList.add('loading');
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Authenticating...';
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then((cred) => {
+                    return db.collection('admins').doc(cred.user.uid).get();
+                })
+                .then((doc) => {
+                    if (!doc.exists) {
+                        auth.signOut();
+                        throw new Error('Access denied. Admin privileges required.');
+                    }
+                    
+                    // Update last login
+                    db.collection('admins').doc(doc.id).update({
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Redirect
+                    window.location.href = 'dashboard.html';
+                })
+                .catch((err) => {
+                    showError(err.message);
+                    btn.classList.remove('loading');
+                    spinner.style.display = 'none';
+                    btnText.textContent = 'Sign In to Admin Panel';
+                });
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorAlert');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            
+            // Re-trigger shake animation
+            errorEl.style.animation = 'none';
+            errorEl.offsetHeight;
+            errorEl.style.animation = 'shake 0.4s ease';
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Enter key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        // Remember me
+        const remembered = localStorage.getItem('adminEmail');
+        if (remembered) {
+            document.getElementById('email').value = remembered;
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        document.getElementById('rememberMe').addEventListener('change', function() {
+            if (this.checked) {
+                localStorage.setItem('adminEmail', document.getElementById('email').value);
+            } else {
+                localStorage.removeItem('adminEmail');
+            }
+        });
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 32px; right: 32px;
+                background: rgba(18, 18, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);
+                padding: 14px 22px; border-radius: 12px; color: #f1f1f6;
+                font-size: 13px; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                animation: fadeInUp 0.3s ease;
+            `;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
