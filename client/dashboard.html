@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — StockSmart Hub</title>
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -28,9 +29,7 @@
             --radius-sm: 10px;
             --radius-md: 14px;
             --radius-lg: 20px;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
             --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,7 +38,6 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-base);
             color: var(--text-primary);
-            display: flex;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
@@ -55,205 +53,201 @@
             z-index: 0;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            height: 100vh;
-            position: fixed;
-            left: 0;
+        /* Top Navigation */
+        .top-nav {
+            position: sticky;
             top: 0;
+            z-index: 100;
             background: rgba(18, 18, 42, 0.9);
             backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border-subtle);
-            z-index: 100;
-            padding: 24px 16px;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s;
-        }
-
-        .sidebar-brand {
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 20px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
-            padding: 0 8px 24px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .brand-icon {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, var(--primary), #7c3aed);
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .brand-name {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
-            letter-spacing: -0.3px;
         }
 
-        .nav-section { margin-bottom: 12px; }
-
-        .nav-section-title {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-muted);
-            padding: 12px 10px 8px;
+        .hamburger {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
         }
 
-        .nav-item {
+        .nav-links {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: var(--radius-sm);
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 13px;
             font-weight: 500;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
             cursor: pointer;
             border: none;
             background: none;
-            width: 100%;
-            text-align: left;
             font-family: inherit;
+            white-space: nowrap;
         }
 
-        .nav-item:hover {
+        .nav-link:hover {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
         }
 
-        .nav-item.active {
+        .nav-link.active {
             background: rgba(91, 90, 247, 0.12);
             color: var(--primary);
             font-weight: 600;
         }
 
-        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-
-        .nav-badge {
-            margin-left: auto;
-            background: var(--danger);
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 100px;
-        }
-
-        .sidebar-footer {
-            margin-top: auto;
-            border-top: 1px solid var(--border-subtle);
-            padding-top: 16px;
-        }
-
-        .user-card {
+        .user-badge {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
             cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .user-card:hover { background: rgba(255, 255, 255, 0.04); }
-
         .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-sm);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 12px;
             font-weight: 700;
-            font-size: 14px;
             color: white;
         }
 
-        .user-info { flex: 1; min-width: 0; }
-
-        .user-name {
-            font-size: 13px;
+        .user-avatar-name {
+            font-size: 12px;
             font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        .user-plan {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .plan-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 100px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .plan-trial { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-        .plan-premium { background: rgba(91, 90, 247, 0.15); color: var(--primary); }
-        .plan-enterprise { background: rgba(14, 165, 233, 0.15); color: var(--secondary); }
-
-        /* Main Content */
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 28px 36px;
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
             position: relative;
             z-index: 1;
         }
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-            gap: 16px;
+        /* Greeting */
+        .greeting {
+            margin-bottom: 24px;
         }
 
         .greeting h1 {
-            font-size: 28px;
+            font-size: clamp(20px, 4vw, 28px);
             font-weight: 700;
-            letter-spacing: -0.4px;
             margin-bottom: 4px;
         }
 
         .greeting p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
         }
 
-        .top-actions {
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: clamp(20px, 3vw, 28px);
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .text-purple { color: #a78bfa; }
+        .text-blue { color: var(--secondary); }
+        .text-orange { color: var(--warning); }
+        .text-green { color: var(--success); }
+
+        /* Action Bar */
+        .action-bar {
             display: flex;
             gap: 10px;
-            align-items: center;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
+            gap: 6px;
+            padding: 10px 18px;
             border-radius: var(--radius-sm);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             border: none;
@@ -265,190 +259,70 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), #7c3aed);
             color: white;
-            box-shadow: 0 2px 12px rgba(91, 90, 247, 0.35);
+            box-shadow: 0 2px 10px rgba(91, 90, 247, 0.3);
         }
 
         .btn-primary:hover {
-            box-shadow: 0 4px 20px rgba(91, 90, 247, 0.5);
             transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(91, 90, 247, 0.5);
         }
 
-        .btn-ghost {
+        .btn-outline {
             background: transparent;
             color: var(--text-secondary);
             border: 1px solid var(--border-medium);
         }
 
-        .btn-ghost:hover {
+        .btn-outline:hover {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
         }
 
-        .btn-sm { padding: 6px 14px; font-size: 11px; }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        .stat-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 22px 24px;
-            transition: all 0.3s;
-        }
-
-        .stat-card:hover {
-            border-color: var(--border-medium);
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .icon-purple { background: rgba(91, 90, 247, 0.15); border: 1px solid rgba(91, 90, 247, 0.2); }
-        .icon-blue { background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.2); }
-        .icon-green { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .icon-orange { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.2); }
-
-        .stat-trend {
+        .btn-sm {
+            padding: 6px 12px;
             font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 100px;
         }
-
-        .trend-up { background: rgba(16, 185, 129, 0.12); color: var(--success); }
-        .trend-down { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -0.8px;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* Bento Grid */
-        .bento-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 18px;
-        }
-
-        .bento-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bento-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                        rgba(91, 90, 247, 0.06), transparent 40%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .bento-card:hover::after { opacity: 1; }
-        .bento-card:hover {
-            border-color: var(--border-medium);
-            box-shadow: var(--shadow-md);
-        }
-
-        .span-8 { grid-column: span 8; }
-        .span-4 { grid-column: span 4; }
-        .span-6 { grid-column: span 6; }
-        .span-12 { grid-column: span 12; }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: -0.2px;
-        }
-
-        .card-action {
-            font-size: 12px;
-            color: var(--primary);
-            cursor: pointer;
-            font-weight: 600;
-            background: none;
-            border: none;
-            font-family: inherit;
-        }
-
-        .card-action:hover { text-decoration: underline; }
 
         /* Shop List */
         .shop-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-height: 400px;
-            overflow-y: auto;
+            margin-bottom: 24px;
         }
 
         .shop-item {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-subtle);
-            transition: all 0.2s;
+            gap: 12px;
             cursor: pointer;
+            transition: all 0.2s;
+            flex-wrap: wrap;
         }
 
         .shop-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: var(--border-medium);
-            transform: translateX(4px);
+            border-color: var(--primary);
+            background: rgba(91, 90, 247, 0.05);
         }
 
         .shop-info {
             display: flex;
             align-items: center;
             gap: 12px;
+            flex: 1;
+            min-width: 180px;
         }
 
         .shop-icon-sm {
@@ -460,6 +334,7 @@
             align-items: center;
             justify-content: center;
             font-size: 18px;
+            flex-shrink: 0;
         }
 
         .shop-name {
@@ -468,35 +343,78 @@
         }
 
         .shop-meta {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
             margin-top: 2px;
         }
 
-        .stock-status {
+        .shop-stats {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .shop-stat {
+            text-align: center;
+        }
+
+        .shop-stat-value {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .shop-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
         }
 
         .status-badge {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             padding: 4px 10px;
             border-radius: 100px;
+            white-space: nowrap;
         }
 
-        .status-healthy { background: rgba(16, 185, 129, 0.12); color: var(--success); }
-        .status-warning { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
-        .status-critical { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+        .status-healthy {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+        }
 
-        /* Alert List */
+        .status-warning {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+        }
+
+        .status-critical {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger);
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .alert-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
         }
 
         .alert-item {
@@ -507,41 +425,17 @@
             border-radius: var(--radius-sm);
             background: rgba(255, 255, 255, 0.02);
             border-left: 3px solid var(--danger);
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: background 0.2s;
         }
 
-        .alert-item:hover { background: rgba(255, 255, 255, 0.04); }
-        .alert-item.warning { border-left-color: var(--warning); }
-
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+        .alert-item:hover {
+            background: rgba(255, 255, 255, 0.04);
         }
 
-        .quick-action-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .quick-action-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--border-medium);
-            transform: translateY(-1px);
+        .alert-item.warning {
+            border-left-color: var(--warning);
         }
 
         /* Empty State */
@@ -550,18 +444,101 @@
             padding: 40px 20px;
         }
 
-        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
 
         .empty-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .empty-text {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: left;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-medium);
+        }
+
+        /* Plan Card */
+        .plan-info {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .plan-trial {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .plan-premium {
+            background: rgba(91, 90, 247, 0.15);
+            color: var(--primary);
+        }
+
+        .plan-enterprise {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--secondary);
+        }
+
+        .usage-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .usage-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.5s;
         }
 
         /* Modal */
@@ -570,38 +547,45 @@
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(6px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
 
-        .modal-panel {
+        .modal {
             background: var(--bg-elevated);
             border: 1px solid var(--border-medium);
             border-radius: var(--radius-lg);
-            padding: 36px;
-            width: 480px;
-            max-width: 90vw;
+            padding: 28px;
+            width: 100%;
+            max-width: 450px;
             max-height: 85vh;
             overflow-y: auto;
-            animation: modalIn 0.25s ease-out;
+            animation: modalIn 0.25s ease;
         }
 
         @keyframes modalIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
         }
 
@@ -612,56 +596,69 @@
             font-size: 24px;
             cursor: pointer;
             padding: 4px;
-            border-radius: var(--radius-sm);
+            border-radius: 6px;
         }
 
-        .modal-close:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+        .modal-close:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
 
-        .form-group { margin-bottom: 18px; }
+        .form-group {
+            margin-bottom: 14px;
+        }
 
         .form-label {
             display: block;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
-        .form-input, .form-textarea {
+        .form-input,
+        .form-textarea {
             width: 100%;
-            padding: 12px 14px;
-            background: rgba(255, 255, 255, 0.04);
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-medium);
             border-radius: var(--radius-sm);
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 13px;
             font-family: inherit;
-            transition: all 0.2s;
         }
 
-        .form-input:focus, .form-textarea:focus {
+        .form-input:focus,
+        .form-textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(91, 90, 247, 0.1);
         }
 
-        .form-input::placeholder { color: var(--text-muted); }
-        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+            margin-top: 8px;
+        }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
+            bottom: 20px;
+            right: 20px;
             background: var(--bg-elevated);
             border: 1px solid var(--border-medium);
             border-radius: var(--radius-sm);
-            padding: 14px 22px;
+            padding: 12px 20px;
             z-index: 2000;
             font-size: 13px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             animation: toastIn 0.3s ease;
             display: flex;
             align-items: center;
@@ -669,330 +666,421 @@
         }
 
         @keyframes toastIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        /* Mobile Menu Button */
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 8px;
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
         }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text { height: 14px; width: 100%; margin-bottom: 8px; }
+        .skeleton-text.short { width: 60%; }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 
         /* Responsive */
-        @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .bento-grid { grid-template-columns: repeat(6, 1fr); }
-            .span-8 { grid-column: span 6; }
-            .span-4 { grid-column: span 3; }
-        }
-
-        @media (max-width: 1024px) {
-            .sidebar { width: 72px; padding: 20px 8px; }
-            .sidebar .brand-name, .sidebar .nav-section-title, .sidebar .nav-item span:not(.nav-icon), 
-            .sidebar .nav-badge, .sidebar .user-info, .sidebar .plan-badge { display: none; }
-            .sidebar-brand { justify-content: center; padding-bottom: 16px; }
-            .nav-item { justify-content: center; padding: 12px; }
-            .main-content { margin-left: 72px; padding: 24px 20px; }
-        }
-
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0; padding: 16px; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .bento-grid { grid-template-columns: 1fr; }
-            .span-4, .span-6, .span-8, .span-12 { grid-column: span 1; }
-            .top-bar { flex-direction: column; align-items: flex-start; }
-            .mobile-menu-btn { display: block; }
-            .quick-actions { grid-template-columns: 1fr; }
+            .hamburger {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                padding-top: 8px;
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .nav-link {
+                width: 100%;
+                text-align: left;
+            }
+
+            .user-badge {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .shop-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .shop-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .container {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-base);
+            z-index: 200;
+            padding: 20px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mobile-menu.open {
+            display: flex;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .mobile-menu-close {
+            background: none;
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+        }
+
+        .mobile-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            border: none;
+            background: none;
+            font-family: inherit;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .mobile-menu-link:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
         }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-btn" onclick="toggleSidebar()" style="position:fixed;top:12px;left:12px;z-index:200;">☰</button>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-brand">
             <div class="brand-icon">📦</div>
             <span class="brand-name">StockSmart Hub</span>
         </div>
-        
-        <nav>
-            <div class="nav-section">
-                <div class="nav-section-title">Main</div>
-                <a href="dashboard.html" class="nav-item active">
-                    <span class="nav-icon">📊</span> Dashboard
-                </a>
-                <a href="dashboard.html#shops" class="nav-item" onclick="scrollToShops()">
-                    <span class="nav-icon">🏪</span> My Shops
-                    <span class="nav-badge" id="shopCountBadge">0</span>
-                </a>
+        <button class="hamburger" onclick="toggleMobileMenu()">☰</button>
+        <div class="nav-links" id="navLinks">
+            <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+            <a href="profile.html" class="nav-link">👤 Profile</a>
+            <a href="billing.html" class="nav-link">💳 Billing</a>
+            <a href="help.html" class="nav-link">❓ Help</a>
+            <div class="user-badge" id="userBadge">
+                <div class="user-avatar" id="navAvatar">U</div>
+                <span class="user-avatar-name" id="navName">User</span>
             </div>
-            
-            <div class="nav-section">
-                <div class="nav-section-title">Account</div>
-                <a href="profile.html" class="nav-item">
-                    <span class="nav-icon">👤</span> Profile
-                </a>
-                <a href="billing.html" class="nav-item">
-                    <span class="nav-icon">💳</span> Billing
-                </a>
-                <a href="help.html" class="nav-item">
-                    <span class="nav-icon">❓</span> Help Center
-                </a>
-            </div>
-        </nav>
-        
-        <div class="sidebar-footer">
-            <div class="user-card" onclick="window.location.href='profile.html'">
-                <div class="user-avatar" id="sidebarAvatar">U</div>
-                <div class="user-info">
-                    <div class="user-name" id="sidebarName">Loading...</div>
-                    <div class="user-plan">
-                        <span class="plan-badge plan-trial" id="sidebarPlan">Trial</span>
-                    </div>
-                </div>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="handleLogout()" style="width:100%; margin-top:8px;">
-                🚪 Sign Out
-            </button>
+            <button class="nav-link" onclick="handleLogout()" style="color: var(--danger);">🚪 Sign Out</button>
         </div>
-    </aside>
+    </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="greeting">
-                <h1>Welcome back, <span id="userFirstName">User</span> 👋</h1>
-                <p>Here's what's happening with your business today</p>
-            </div>
-            <div class="top-actions">
-                <button class="btn btn-ghost" onclick="exportDashboardData()">📥 Export</button>
-                <button class="btn btn-primary" onclick="openAddShopModal()">➕ Add New Shop</button>
-            </div>
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <span style="font-weight:700;font-size:18px;">📦 StockSmart Hub</span>
+            <button class="mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
+        </div>
+        <a href="dashboard.html" class="mobile-menu-link">📊 Dashboard</a>
+        <a href="profile.html" class="mobile-menu-link">👤 Profile</a>
+        <a href="billing.html" class="mobile-menu-link">💳 Billing</a>
+        <a href="help.html" class="mobile-menu-link">❓ Help</a>
+        <button class="mobile-menu-link" onclick="handleLogout()" style="color: var(--danger);">🚪 Sign Out</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Greeting -->
+        <div class="greeting">
+            <h1>Welcome back, <span id="userFirstName">User</span> 👋</h1>
+            <p>Here's what's happening with your business today</p>
         </div>
 
-        <!-- Stats Overview -->
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon icon-purple">🏪</div>
-                    <span class="stat-trend trend-up">↑ Active</span>
-                </div>
-                <div class="stat-value" id="statTotalShops">0</div>
+                <div class="stat-icon">🏪</div>
+                <div class="stat-value text-purple" id="statTotalShops">0</div>
                 <div class="stat-label">Your Shops</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon icon-blue">📦</div>
-                    <span class="stat-trend trend-up">↑ Growing</span>
-                </div>
-                <div class="stat-value" id="statTotalItems">0</div>
+                <div class="stat-icon">📦</div>
+                <div class="stat-value text-blue" id="statTotalItems">0</div>
                 <div class="stat-label">Total Products</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon icon-orange">⚠️</div>
-                    <span class="stat-trend trend-down" id="lowStockTrend">Needs attention</span>
-                </div>
-                <div class="stat-value" id="statLowStock">0</div>
-                <div class="stat-label">Low Stock Items</div>
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value text-orange" id="statLowStock">0</div>
+                <div class="stat-label">Low Stock</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon icon-green">💰</div>
-                    <span class="stat-trend trend-up">↑ Total value</span>
-                </div>
-                <div class="stat-value" id="statTotalValue">$0</div>
+                <div class="stat-icon">💰</div>
+                <div class="stat-value text-green" id="statTotalValue">TSh 0</div>
                 <div class="stat-label">Inventory Value</div>
             </div>
         </div>
 
-        <!-- Bento Grid -->
-        <div class="bento-grid" id="shops">
-            <!-- Shop List -->
-            <div class="bento-card span-8">
-                <div class="card-header">
-                    <h3 class="card-title">Your Shops</h3>
-                    <button class="card-action" onclick="openAddShopModal()">+ Add Shop</button>
-                </div>
-                <div class="shop-list" id="shopList">
-                    <div class="empty-state">
-                        <div class="empty-icon">🏪</div>
-                        <div class="empty-title">No shops yet</div>
-                        <div class="empty-text">Add your first shop to start managing inventory like a pro</div>
-                        <button class="btn btn-primary" onclick="openAddShopModal()">Add Your First Shop</button>
-                    </div>
-                </div>
-            </div>
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="openAddShopModal()">
+                🏪 Add New Shop
+            </button>
+            <button class="quick-action-btn" onclick="window.location.href='profile.html'">
+                👤 Update Profile
+            </button>
+            <button class="quick-action-btn" onclick="exportData()">
+                📥 Export Data
+            </button>
+            <button class="quick-action-btn" onclick="window.location.href='help.html'">
+                ❓ Get Help
+            </button>
+        </div>
 
-            <!-- Low Stock Alerts -->
-            <div class="bento-card span-4">
-                <div class="card-header">
-                    <h3 class="card-title">⚠️ Low Stock Alerts</h3>
-                </div>
-                <div class="alert-list" id="alertList">
-                    <div class="empty-state" style="padding:24px;">
-                        <div class="empty-icon" style="font-size:32px;">✅</div>
-                        <div class="empty-title" style="font-size:15px;">All stocked up!</div>
-                        <div class="empty-text">No low stock alerts</div>
-                    </div>
-                </div>
-            </div>
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="openAddShopModal()">➕ Add New Shop</button>
+            <button class="btn btn-outline" onclick="exportData()">📥 Export</button>
+            <button class="btn btn-outline" onclick="refreshData()">🔄 Refresh</button>
+        </div>
 
-            <!-- Quick Actions -->
-            <div class="bento-card span-6">
-                <div class="card-header">
-                    <h3 class="card-title">Quick Actions</h3>
-                </div>
-                <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="openAddShopModal()">
-                        🏪 Add New Shop
-                    </button>
-                    <button class="quick-action-btn" onclick="window.location.href='profile.html'">
-                        👤 Update Profile
-                    </button>
-                    <button class="quick-action-btn" onclick="exportDashboardData()">
-                        📥 Export Data
-                    </button>
-                    <button class="quick-action-btn" onclick="window.location.href='help.html'">
-                        ❓ Get Help
-                    </button>
-                </div>
-            </div>
+        <!-- Low Stock Alerts -->
+        <div class="alerts-section" id="alertsSection" style="display:none;">
+            <h3 class="section-title">⚠️ Low Stock Alerts</h3>
+            <div class="alert-list" id="alertList"></div>
+        </div>
 
-            <!-- Plan Info -->
-            <div class="bento-card span-6">
-                <div class="card-header">
-                    <h3 class="card-title">Your Plan</h3>
-                    <button class="card-action" onclick="window.location.href='billing.html'">Upgrade →</button>
-                </div>
-                <div style="display:flex;align-items:center;gap:16px;">
-                    <div style="font-size:48px;">💎</div>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;" id="planName">Free Trial</div>
-                        <div style="font-size:13px;color:var(--text-muted);" id="planExpiry">14 days remaining</div>
-                    </div>
-                </div>
-                <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);">
-                    <div style="font-size:12px;color:var(--text-muted);">
-                        <span id="shopsUsed">0</span> / <span id="shopsLimit">3</span> shops used • 
-                        <span id="itemsUsed">0</span> / <span id="itemsLimit">500</span> items
-                    </div>
-                    <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:8px;overflow:hidden;">
-                        <div style="height:100%;background:var(--primary);border-radius:2px;width:0%;" id="usageBar"></div>
-                    </div>
-                </div>
+        <!-- Shop List -->
+        <div class="shop-list" id="shopList">
+            <div class="empty-state">
+                <div class="empty-icon">🏪</div>
+                <div class="empty-title">No shops yet</div>
+                <div class="empty-text">Add your first shop to start managing inventory</div>
+                <button class="btn btn-primary" onclick="openAddShopModal()">Add Your First Shop</button>
             </div>
         </div>
-    </main>
+
+        <!-- Plan Info -->
+        <div class="plan-info">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="font-size:14px;font-weight:700;" id="planName">Free Trial</div>
+                    <div style="font-size:11px;color:var(--text-muted);" id="planExpiry">14 days remaining</div>
+                </div>
+                <span class="plan-badge plan-trial" id="planBadge">Trial</span>
+            </div>
+            <div style="margin-top:12px;">
+                <div style="font-size:11px;color:var(--text-muted);">
+                    <span id="shopsUsed">0</span> / <span id="shopsLimit">3</span> shops • 
+                    <span id="itemsUsed">0</span> / <span id="itemsLimit">500</span> items
+                </div>
+                <div class="usage-bar">
+                    <div class="usage-fill" id="usageBar" style="width:0%;"></div>
+                </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='billing.html'" style="margin-top:12px;">Upgrade Plan →</button>
+        </div>
+    </div>
 
     <!-- Add Shop Modal -->
     <div class="modal-overlay" id="addShopModal">
-        <div class="modal-panel">
+        <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">Add New Shop</h3>
                 <button class="modal-close" onclick="closeModal('addShopModal')">×</button>
             </div>
             <div class="form-group">
                 <label class="form-label">Shop Name *</label>
-                <input type="text" class="form-input" id="shopName" placeholder="e.g., Downtown Flagship Store">
+                <input type="text" class="form-input" id="shopName" placeholder="e.g., Downtown Store">
             </div>
             <div class="form-group">
                 <label class="form-label">Address</label>
-                <input type="text" class="form-input" id="shopAddress" placeholder="123 Main Street, City">
+                <input type="text" class="form-input" id="shopAddress" placeholder="123 Main Street">
             </div>
             <div class="form-group">
-                <label class="form-label">Contact Phone</label>
-                <input type="tel" class="form-input" id="shopPhone" placeholder="+1 (555) 000-0000">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" id="shopPhone" placeholder="+255 700 000 000">
             </div>
             <div class="form-group">
-                <label class="form-label">Notes (Optional)</label>
-                <textarea class="form-textarea" id="shopNotes" placeholder="Any additional information about this shop..."></textarea>
+                <label class="form-label">Notes</label>
+                <textarea class="form-textarea" id="shopNotes" placeholder="Optional notes..."></textarea>
             </div>
-            <button class="btn btn-primary" onclick="addShop()" style="width:100%; margin-top:8px;">
-                Create Shop
-            </button>
+            <button class="btn btn-primary btn-full" onclick="addShop()">Create Shop</button>
         </div>
     </div>
 
     <script src="../js/firebase-config.js"></script>
     <script>
-        // ============ AUTH & INIT ============
+        // ============ INITIALIZATION ============
         let currentUser = null;
         let userProfile = null;
         let allShops = [];
 
+        console.log('Dashboard loaded, checking auth...');
+
+        // Auth state observer
         auth.onAuthStateChanged((user) => {
+            console.log('Auth state changed:', user ? 'User logged in: ' + user.uid : 'No user');
+            
             if (!user) {
+                console.log('No user found, redirecting to login...');
                 window.location.href = '../index.html';
                 return;
             }
+            
             currentUser = user;
+            console.log('Current user set, loading profile...');
             loadUserProfile();
             loadDashboardData();
         });
 
+        // ============ LOAD USER PROFILE ============
         function loadUserProfile() {
+            if (!currentUser) {
+                console.log('No current user for profile load');
+                return;
+            }
+
+            console.log('Fetching user profile for:', currentUser.uid);
+            
             db.collection('users').doc(currentUser.uid).get()
                 .then((doc) => {
                     if (doc.exists) {
                         userProfile = doc.data();
-                        updateUI();
+                        console.log('User profile loaded:', userProfile);
+                        updateUserUI();
+                    } else {
+                        console.log('User document not found, creating...');
+                        // Create user document if it doesn't exist
+                        return db.collection('users').doc(currentUser.uid).set({
+                            name: currentUser.displayName || 'User',
+                            email: currentUser.email,
+                            plan: 'trial',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }).then(() => {
+                            userProfile = {
+                                name: currentUser.displayName || 'User',
+                                email: currentUser.email,
+                                plan: 'trial'
+                            };
+                            updateUserUI();
+                        });
                     }
+                })
+                .catch((error) => {
+                    console.error('Error loading profile:', error);
+                    showToast('Error loading profile: ' + error.message, 'error');
                 });
         }
 
-        function updateUI() {
-            if (!userProfile) return;
-            
+        function updateUserUI() {
+            if (!userProfile) {
+                console.log('No user profile to update UI');
+                return;
+            }
+
             const firstName = (userProfile.name || 'User').split(' ')[0];
-            document.getElementById('userFirstName').textContent = firstName;
-            document.getElementById('sidebarName').textContent = userProfile.name || 'User';
-            document.getElementById('sidebarAvatar').textContent = firstName.charAt(0).toUpperCase();
+            console.log('Updating UI for:', firstName);
             
+            document.getElementById('userFirstName').textContent = firstName;
+            document.getElementById('navName').textContent = firstName;
+            document.getElementById('navAvatar').textContent = firstName.charAt(0).toUpperCase();
+
+            // Update plan badge
             const plan = userProfile.plan || 'trial';
-            const planBadge = document.getElementById('sidebarPlan');
+            const planBadge = document.getElementById('planBadge');
             planBadge.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-            planBadge.className = `plan-badge plan-${plan}`;
+            planBadge.className = 'plan-badge plan-' + plan;
             
             document.getElementById('planName').textContent = 
                 plan === 'premium' ? 'Premium Plan' : 
                 plan === 'enterprise' ? 'Enterprise Plan' : 'Free Trial';
-            
-            // Calculate trial expiry
+
+            // Trial expiry
             if (userProfile.createdAt && plan === 'trial') {
                 const created = userProfile.createdAt.toDate();
                 const expiry = new Date(created.getTime() + 14 * 24 * 60 * 60 * 1000);
                 const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
                 document.getElementById('planExpiry').textContent = 
-                    daysLeft > 0 ? `${daysLeft} days remaining in trial` : 'Trial expired';
+                    daysLeft > 0 ? `${daysLeft} days remaining` : 'Trial expired - Upgrade now';
             }
         }
 
-        // ============ DASHBOARD DATA ============
+        // ============ LOAD DASHBOARD DATA ============
         function loadDashboardData() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.log('No current user for data load');
+                return;
+            }
+
+            console.log('Loading dashboard data for user:', currentUser.uid);
 
             db.collection('shops')
                 .where('userId', '==', currentUser.uid)
                 .orderBy('createdAt', 'desc')
                 .onSnapshot((snapshot) => {
+                    console.log('Shops snapshot received, count:', snapshot.size);
+                    
                     allShops = [];
                     const shopPromises = [];
 
@@ -1002,14 +1090,16 @@
                             ...doc.data()
                         };
                         allShops.push(shopData);
-                        
+                        console.log('Shop found:', shopData.name, shopData.id);
+
+                        // Get items for each shop
                         const promise = db.collection('shops').doc(doc.id).collection('items')
                             .get()
                             .then((itemsSnapshot) => {
                                 shopData.itemCount = itemsSnapshot.size;
                                 shopData.lowStockCount = 0;
                                 shopData.totalValue = 0;
-                                
+
                                 itemsSnapshot.forEach((itemDoc) => {
                                     const item = itemDoc.data();
                                     shopData.totalValue += (item.quantity || 0) * (item.price || 0);
@@ -1017,23 +1107,45 @@
                                         shopData.lowStockCount++;
                                     }
                                 });
+
+                                console.log('Shop items loaded:', shopData.name, 
+                                    'items:', shopData.itemCount, 
+                                    'lowStock:', shopData.lowStockCount);
                                 
                                 return shopData;
+                            })
+                            .catch((error) => {
+                                console.error('Error loading items for shop:', shopData.name, error);
+                                shopData.itemCount = 0;
+                                shopData.lowStockCount = 0;
+                                shopData.totalValue = 0;
+                                return shopData;
                             });
-                        
+
                         shopPromises.push(promise);
                     });
 
                     Promise.all(shopPromises).then((shopsWithData) => {
                         allShops = shopsWithData;
+                        console.log('All shops loaded:', allShops.length);
+                        updateStats();
+                        renderShopList();
+                        renderAlerts();
+                        updatePlanUsage();
+                    }).catch((error) => {
+                        console.error('Error processing shops:', error);
                         updateStats();
                         renderShopList();
                         renderAlerts();
                         updatePlanUsage();
                     });
+                }, (error) => {
+                    console.error('Error in shops listener:', error);
+                    showToast('Error loading shops: ' + error.message, 'error');
                 });
         }
 
+        // ============ UPDATE STATS ============
         function updateStats() {
             const totalShops = allShops.length;
             let totalItems = 0;
@@ -1046,40 +1158,45 @@
                 totalValue += (shop.totalValue || 0);
             });
 
+            console.log('Updating stats:', { totalShops, totalItems, totalLowStock, totalValue });
+
             document.getElementById('statTotalShops').textContent = totalShops;
             document.getElementById('statTotalItems').textContent = totalItems;
             document.getElementById('statLowStock').textContent = totalLowStock;
-            document.getElementById('statTotalValue').textContent = 
-                '$' + totalValue.toLocaleString('en-US', { minimumFractionDigits: 0 });
             
-            document.getElementById('shopCountBadge').textContent = totalShops;
+            // Format in TSH (Tanzanian Shilling)
+            document.getElementById('statTotalValue').textContent = 
+                'TSh ' + totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
+        // ============ UPDATE PLAN USAGE ============
         function updatePlanUsage() {
             const totalItems = allShops.reduce((sum, s) => sum + (s.itemCount || 0), 0);
-            const shopLimit = userProfile?.plan === 'enterprise' ? 999 : 
-                            userProfile?.plan === 'premium' ? 50 : 3;
-            const itemLimit = userProfile?.plan === 'enterprise' ? 999999 : 
-                            userProfile?.plan === 'premium' ? 10000 : 500;
+            const plan = userProfile?.plan || 'trial';
             
+            const shopLimit = plan === 'enterprise' ? 999 : plan === 'premium' ? 50 : 3;
+            const itemLimit = plan === 'enterprise' ? 999999 : plan === 'premium' ? 10000 : 500;
+
             document.getElementById('shopsUsed').textContent = allShops.length;
             document.getElementById('shopsLimit').textContent = shopLimit;
             document.getElementById('itemsUsed').textContent = totalItems;
             document.getElementById('itemsLimit').textContent = itemLimit;
-            
+
             const usagePercent = Math.min(100, (allShops.length / shopLimit) * 100);
             document.getElementById('usageBar').style.width = usagePercent + '%';
         }
 
+        // ============ RENDER SHOP LIST ============
         function renderShopList() {
             const container = document.getElementById('shopList');
-            
+            console.log('Rendering shop list, count:', allShops.length);
+
             if (allShops.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🏪</div>
                         <div class="empty-title">No shops yet</div>
-                        <div class="empty-text">Add your first shop to start managing inventory like a pro</div>
+                        <div class="empty-text">Add your first shop to start managing inventory</div>
                         <button class="btn btn-primary" onclick="openAddShopModal()">Add Your First Shop</button>
                     </div>
                 `;
@@ -1091,33 +1208,42 @@
                                    (shop.lowStockCount || 0) > 0 ? 'warning' : 'healthy';
                 const statusText = stockStatus === 'critical' ? 'Critical' :
                                    stockStatus === 'warning' ? 'Low Stock' : 'Healthy';
-                
+
                 return `
                     <div class="shop-item" onclick="openShop('${shop.id}')">
                         <div class="shop-info">
                             <div class="shop-icon-sm">🏪</div>
                             <div>
-                                <div class="shop-name">${escapeHtml(shop.name)}</div>
+                                <div class="shop-name">${escapeHtml(shop.name || 'Unnamed Shop')}</div>
                                 <div class="shop-meta">
                                     ${shop.address ? escapeHtml(shop.address) + ' • ' : ''}
-                                    ${shop.itemCount || 0} items • 
-                                    $${(shop.totalValue || 0).toLocaleString()}
+                                    ${shop.itemCount || 0} items
                                 </div>
                             </div>
                         </div>
-                        <div class="stock-status">
+                        <div class="shop-stats">
+                            <div class="shop-stat">
+                                <div class="shop-stat-value">${shop.itemCount || 0}</div>
+                                <div class="shop-stat-label">Items</div>
+                            </div>
+                            <div class="shop-stat">
+                                <div class="shop-stat-value">TSh ${(shop.totalValue || 0).toLocaleString()}</div>
+                                <div class="shop-stat-label">Value</div>
+                            </div>
                             <span class="status-badge status-${stockStatus}">${statusText}</span>
-                            <span style="color: var(--primary);">→</span>
+                            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openShop('${shop.id}')">View →</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
+        // ============ RENDER ALERTS ============
         function renderAlerts() {
-            const container = document.getElementById('alertList');
+            const alertsSection = document.getElementById('alertsSection');
+            const alertList = document.getElementById('alertList');
+            
             const allAlerts = [];
-
             allShops.forEach(shop => {
                 if (shop.lowStockCount > 0) {
                     allAlerts.push({
@@ -1130,24 +1256,19 @@
             });
 
             if (allAlerts.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="padding:24px;">
-                        <div class="empty-icon" style="font-size:32px;">✅</div>
-                        <div class="empty-title" style="font-size:15px;">All stocked up!</div>
-                        <div class="empty-text">No low stock alerts</div>
-                    </div>
-                `;
+                alertsSection.style.display = 'none';
                 return;
             }
 
-            container.innerHTML = allAlerts.map(alert => `
+            alertsSection.style.display = 'block';
+            alertList.innerHTML = allAlerts.map(alert => `
                 <div class="alert-item ${alert.type}" onclick="openShop('${alert.shopId}')">
                     <span>⚠️</span>
                     <div style="flex:1;">
-                        <div style="font-weight:600;font-size:12px;">${escapeHtml(alert.shopName)}</div>
-                        <div style="font-size:11px;color:var(--text-muted);">${alert.count} item${alert.count > 1 ? 's' : ''} below threshold</div>
+                        <div style="font-weight:600;">${escapeHtml(alert.shopName)}</div>
+                        <div style="font-size:10px;color:var(--text-muted);">${alert.count} item${alert.count > 1 ? 's' : ''} below threshold</div>
                     </div>
-                    <span style="color:var(--primary);font-size:12px;">View →</span>
+                    <span style="color:var(--primary);font-size:11px;">View →</span>
                 </div>
             `).join('');
         }
@@ -1158,7 +1279,12 @@
         }
 
         function openAddShopModal() {
+            console.log('Opening add shop modal');
             document.getElementById('addShopModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
         function addShop() {
@@ -1172,6 +1298,8 @@
                 return;
             }
 
+            console.log('Adding shop:', { name, address, phone });
+
             db.collection('shops').add({
                 userId: currentUser.uid,
                 name: name,
@@ -1180,12 +1308,14 @@
                 notes: notes,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             })
-            .then(() => {
+            .then((docRef) => {
+                console.log('Shop added successfully:', docRef.id);
                 closeModal('addShopModal');
                 clearShopForm();
                 showToast('Shop added successfully! 🎉', 'success');
             })
             .catch((error) => {
+                console.error('Error adding shop:', error);
                 showToast('Error: ' + error.message, 'error');
             });
         }
@@ -1197,15 +1327,15 @@
             document.getElementById('shopNotes').value = '';
         }
 
-        function exportDashboardData() {
+        function exportData() {
             if (allShops.length === 0) {
                 showToast('No data to export', 'error');
                 return;
             }
 
-            let csv = 'Shop Name,Address,Items,Low Stock,Total Value\n';
+            let csv = 'Shop Name,Address,Items,Low Stock,Total Value (TSh)\n';
             allShops.forEach(shop => {
-                csv += `"${shop.name}","${shop.address || ''}",${shop.itemCount || 0},${shop.lowStockCount || 0},$${shop.totalValue || 0}\n`;
+                csv += `"${shop.name || ''}","${shop.address || ''}",${shop.itemCount || 0},${shop.lowStockCount || 0},${shop.totalValue || 0}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1218,26 +1348,30 @@
             showToast('Export downloaded! 📥', 'success');
         }
 
-        function scrollToShops() {
-            document.getElementById('shops').scrollIntoView({ behavior: 'smooth' });
+        function refreshData() {
+            showToast('Refreshing...', 'info');
+            loadDashboardData();
+            setTimeout(() => showToast('Data refreshed! ✅', 'success'), 1000);
         }
 
         // ============ UI HELPERS ============
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('open');
+            
+            // Also toggle nav links on desktop
+            const navLinks = document.getElementById('navLinks');
+            if (window.innerWidth <= 768) {
+                navLinks.classList.toggle('open');
+            }
         }
 
         function handleLogout() {
             auth.signOut().then(() => {
                 window.location.href = '../index.html';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                showToast('Error signing out', 'error');
             });
         }
 
@@ -1259,37 +1393,40 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Mouse tracking for bento cards
-        document.querySelectorAll('.bento-card').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                card.style.setProperty('--mouse-x', `${x}%`);
-                card.style.setProperty('--mouse-y', `${y}%`);
-            });
-        });
-
-        // Modal close on overlay click
+        // ============ EVENT LISTENERS ============
+        // Close modals on overlay click
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeModal(overlay.id);
             });
         });
 
-        // Escape key
+        // Close modals on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay').forEach(m => {
                     if (m.style.display === 'flex') closeModal(m.id);
                 });
+                // Also close mobile menu
+                document.getElementById('mobileMenu').classList.remove('open');
             }
         });
+
+        // Close mobile menu on window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                document.getElementById('mobileMenu').classList.remove('open');
+                document.getElementById('navLinks').classList.remove('open');
+            }
+        });
+
+        console.log('Dashboard script fully loaded and ready');
     </script>
 </body>
 </html>
